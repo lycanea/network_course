@@ -1,0 +1,288 @@
+---
+title: "NC_02"
+author: "Jakub Štenc"
+date: "2024-02-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Networks 02: data and visualization
+
+![](airports_network_gif_H5.gif){width="807"}
+
+## What we will talk about:
+
+-   How can network data look like
+
+-   Data collection vs. analyses
+
+-   Visualization of bipartite networks
+
+## Unipartite/general network:
+
+Linked notes are on the same level/plane
+
+![](Rplot09.jpeg)
+
+## Bipartite network:
+
+Notes are belonging to two levels/planes
+
+![](Rplot07.jpeg)
+
+## Tripartite/multipartite networks
+
+Notes are belonging to multiple levels/planes
+
+![](A-tripartite-ecological-network-consisting-of-NHdocumentclass12ptminimal.png)
+
+## Bipartite networks visualization
+
+We can visualize bipartite networks as:
+
+### Network
+
+```{r , echo=T, warning=F, include=T}
+library(bipartite)
+plotweb(Safariland)
+```
+
+### Matrix
+
+```{r, echo=T, warning=F, include=T}
+visweb(Safariland)
+```
+
+= Vázquez et al. (2009)
+
+## Packages
+
+What packages are we going to use?
+
+```{r packages, echo=T, warning=F, include=T}
+#library(bipartite) # mainly for network analyses
+
+```
+
+```{r packagesT, echo=F, warning=F, include=F}
+library(bipartite) 
+library(igraph)
+library(network)
+```
+
+## Data
+
+
+How we usually collect data in field:
+
+| Time  | Plot | Plant    | Pollinator | Number of interactions |
+|-------|------|----------|------------|------------------------|
+| 23:30 | 1    | Cen_jac  | Eri_ten    | 10                     |
+| 23:45 | 2    | Chuq_jus | Col_ibr    | 1                      |
+| 23:45 | 2    | Cen_jac  | Eri_ten    | 5                      |
+
+: Data collected in the field
+
+But we usually want something like this:
+
+|             | Cen_jac | Chuq_jus |
+|-------------|---------|----------|
+| **Eri_ten** | 15      | 0        |
+| **Col_ibr** | 0       | 1        |
+
+
+How to transfer them? 
+
+## Data handling
+
+```{r HairEye}
+
+HairEye <-  data.frame(HairEyeColor) # we will do a little bit of cheating here. We will use HairEyeColor and put them to the dataframe
+ 
+HairEye # This is how data usually looks like when obtained in the field
+
+## This is often called "long" data 
+
+## How to translate it into "wide" data?
+
+HairEyeweb <- tapply(HairEye$Freq, list(HairEye$Hair,HairEye$Eye), sum) # simply by tapply() function
+
+HairEyeweb
+
+plotweb(HairEyeweb) # ploting the web
+
+
+
+```
+
+## Changes in plotweb() plots - graphical parameters
+
+```{r plotweb}
+
+plotweb(HairEyeweb) # ploting the web
+
+
+plotweb(HairEyeweb, 
+        method="cca", #    Default method is cca, which leads to as few crossings of interactions as possible. The other option is normal, which leaves order as given by the matrix. 
+        text.rot = 90,
+        labsize =1, 
+        ybig = 0.8, 
+        low.y = 0.6, 
+        high.y = 0.98, 
+        plot.axes = FALSE, 
+        y.width.low = 0.05, 
+        y.width.high = 0.05, 
+        low.spacing=0.01, 
+        high.spacing=0.01,
+        bor.col.low = "black",
+        col.low = "red",
+        col.high = "gray",
+        bor.col.high = "black",  
+        bor.col.interaction = rgb(250,250,250, alpha = 50, max=255), 
+        col.interaction=rgb(0,0,0, alpha = 90, max=255))
+
+
+```
+
+```{r anotherwebprojections}
+
+visweb(HairEyeweb, labsize = 0.5 )
+
+gplot(as.one.mode(HairEyeweb, project="lower"), 
+	label=rownames(HairEyeweb), gmode="graph", 
+	label.cex=0.6, vertex.cex=2, vertex.col="red")
+
+```
+
+## Examples of interactive networks
+
+# Practice 1: Visualize network based on Safariland data.
+
+```{r safariland}
+
+Safariland
+
+```
+
+```{r}
+Safariland
+
+plotweb(Safariland, method = "cca")
+
+visweb(Safariland)
+
+
+```
+
+Just a note: Sometimes it can be useful to change the network to binary network. For that we have function network2bin()
+
+```{r}
+#library(bipartite)
+#Safariland2 <- network2bin(Safariland) # simply cahnge all the numbers higher than 0 to 1
+
+
+#visweb(Safariland) # non-binary web
+#visweb(Safariland2) # binary web
+
+```
+
+# Practice 2: from data handling to plotting a web
+
+```{r jcnet}
+
+jc_net <- read.csv("jc_network21.csv")
+
+# Or from Github directly 
+#jc_net <-  read.csv("https://raw.githubusercontent.com/lycanea/network_course/main/jc_network21.csv?token=GHSAT0AAAAAACO5AVK36PCO3JJULQZ3K37CZPJ6PCA") 
+
+
+head(jc_net)
+```
+
+```{r}
+
+#jc_net <-  read.csv("jc_network21.csv")
+
+head(jc_net)
+
+
+jc_web <-  tapply(jc_net$number , list(jc_net$pollinator, jc_net$plant), sum) # 
+
+jc_web[is.na(jc_web)] <- 0 # replace NA with 0 
+
+plotweb(jc_web, "cca")
+
+
+plotweb(jc_web, "cca", col.interaction = rgb(0,0,0, max = 255, alpha = 100),  bor.col.interaction  = rgb(0,0,0, max = 255, alpha = 100))
+
+```
+
+## Other examples of networks and their visualization
+
+### Sankey plots
+
+```{r}
+library(networkD3)
+ 
+# Load energy projection data
+URL <- "https://cdn.rawgit.com/christophergandrud/networkD3/master/JSONdata/energy.json"
+Energy <- jsonlite::fromJSON(URL)
+
+ 
+# Now we have 2 data frames: a 'links' data frame with 3 columns (from, to, value), and a 'nodes' data frame that gives the name of each node.
+head( Energy$links )
+head( Energy$nodes )
+ 
+# Thus we can plot it
+p <- sankeyNetwork(Links = Energy$links, Nodes = Energy$nodes, Source = "source",
+              Target = "target", Value = "value", NodeID = "name",
+              units = "TWh", fontSize = 12, nodeWidth = 30)
+p
+
+# save the widget
+# library(htmlwidgets)
+# saveWidget(p, file=paste0( getwd(), "/HtmlWidget/sankeyEnergy.html"))
+```
+
+```{r}
+library(networkD3)
+library(tidyverse)
+ 
+
+# I need a long format
+data_long <- data.frame(jc_web) %>%
+  rownames_to_column %>%
+  gather(key = 'key', value = 'value', -rowname) %>%
+  filter(value > 0)
+colnames(data_long) <- c("source", "target", "value")
+data_long$target <- paste(data_long$target, " ", sep="")
+
+
+# From these flows we need to create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(name=c(as.character(data_long$source), as.character(data_long$target)) %>% unique())
+ 
+
+# With networkD3, connection must be provided using id, not using real name like in the links dataframe.. So we need to reformat it.
+data_long$IDsource=match(data_long$source, nodes$name)-1 
+data_long$IDtarget=match(data_long$target, nodes$name)-1
+
+# prepare colour scale
+
+# Make the Network
+sankeyNetwork(Links = data_long, Nodes = nodes,
+                     Source = "IDsource", Target = "IDtarget",
+                     Value = "value", NodeID = "name", 
+                     sinksRight=FALSE, nodeWidth=40, fontSize=13, nodePadding=20)
+
+```
+
+### Maps with **plotly**
+
+![Network of US airports and domestic flights](newplot.png)
+
+<https://plotly-r.com/interactives/geo-flights>
